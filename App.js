@@ -1,114 +1,109 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, View, Dimensions, FlatList, Button} from 'react-native';
+import Animated from 'react-native-reanimated';
+import {useTween} from 'react-native-retween';
 
-import React from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
+const {width: windowWidth} = Dimensions.get('window');
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-const App: () => React$Node = () => {
-  return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
+const colors = {
+  red: '#e74c3c',
+  white: 'white',
+  green: '#2ecc71',
 };
 
-const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+const s = StyleSheet.create({
+  scroll: {
+    paddingVertical: 20,
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
+  animationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    // alignItems: 'center',
   },
-  body: {
-    backgroundColor: Colors.white,
+  animatedView: {
+    backgroundColor: colors.red,
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  row: {
+    flexDirection: 'row',
+    alignSelf: 'center',
   },
 });
 
-export default App;
+function TweenExample() {
+  const value = new Animated.Value(0);
+  const {play, values, stop} = useTween(() => ({
+    timing: {
+      duration: 400,
+    },
+    from: {
+      width: 50,
+      height: 50,
+      left: 20,
+      borderRadius: 0,
+    },
+    to: {
+      width: 200,
+      height: 200,
+      left: windowWidth - 20 - 200,
+      borderRadius: 2,
+    },
+  }));
+
+  const [backward, setBackward] = React.useState(false);
+
+  function onPlay() {
+    play(backward);
+    setBackward(val => !val);
+  }
+
+  function onStop() {
+    stop();
+    setBackward(false);
+  }
+
+  return (
+    <View style={s.animationContainer}>
+      <View style={s.row}>
+        <Button onPress={onPlay} title="Toggle animation" />
+        <Button onPress={onStop} title="Stop" />
+      </View>
+
+      <Animated.View style={[s.animatedView, values]} />
+    </View>
+  );
+}
+
+const ANIMATION_COUNT = 10;
+
+export default function BasicScreen() {
+  const [show, setShow] = React.useState(false);
+  // performance test
+  const range = Array.from(new Array(ANIMATION_COUNT));
+
+  if (!show) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+        <Button
+          onPress={() => setShow(true)}
+          title={global.NativeReanimated.runTest(1, {})}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={range}
+      initialNumToRender={ANIMATION_COUNT}
+      // maxToRenderPerBatch={ANIMATION_COUNT}
+      contentContainerStyle={s.scroll}
+      renderItem={() => <TweenExample />}
+      keyExtractor={(_, i) => i.toString()}
+    />
+  );
+}

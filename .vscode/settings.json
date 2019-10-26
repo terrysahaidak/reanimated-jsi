@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "Appfile": "ruby",
+    "Fastfile": "ruby",
+    "*.ipp": "cpp"
+  }
+}
