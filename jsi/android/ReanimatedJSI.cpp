@@ -27,6 +27,7 @@ void JNICALL Java_com_swmansion_reanimated_ReanimatedModule_installJSI(
   auto disconnectNodeFromView = env->GetMethodID(clazz, "disconnectNodeFromView", "(II)V");
   auto attachEvent = env->GetMethodID(clazz, "attachEvent", "(ILjava/lang/String;I)V");
   auto detachEvent = env->GetMethodID(clazz, "detachEvent", "(ILjava/lang/String;I)V");
+  auto getValue = env->GetMethodID(clazz, "getValue", "(ILcom/facebook/react/bridge/Callback;)V");
 
   auto module = std::make_shared<ReanimatedJSI>(
     // clazz,
@@ -38,7 +39,8 @@ void JNICALL Java_com_swmansion_reanimated_ReanimatedModule_installJSI(
     connectNodeToView,
     disconnectNodeFromView,
     attachEvent,
-    detachEvent
+    detachEvent,
+    getValue
   );
 
   ReanimatedJSI::install(runtime, module);
@@ -70,7 +72,8 @@ ReanimatedJSI::ReanimatedJSI(
   jmethodID connectNodeToView,
   jmethodID disconnectNodeFromView,
   jmethodID attachEvent,
-  jmethodID detachEvent
+  jmethodID detachEvent,
+  jmethodID getValue
 ): 
   // _moduleClass(moduleClass),
   _moduleObject(moduleObject),
@@ -81,7 +84,8 @@ ReanimatedJSI::ReanimatedJSI(
   _connectNodeToView(connectNodeToView),
   _disconnectNodeFromView(disconnectNodeFromView),
   _attachEvent(attachEvent),
-  _detachEvent(detachEvent)
+  _detachEvent(detachEvent),
+  _getValue(getValue)
 {}
 
 void ReanimatedJSI::install(
@@ -99,6 +103,31 @@ jsi::Value ReanimatedJSI::get(
   const jsi::PropNameID &name
 ) {
   auto methodName = name.utf8(runtime);
+
+  if (methodName == "getValue") {
+    auto &method = _getValue;
+    auto &moduleObject = _moduleObject;
+
+    auto callback = [moduleObject, method](
+      jsi::Runtime &runtime,
+      const jsi::Value &thisValue,
+      const jsi::Value *arguments,
+      size_t count
+    ) -> jsi::Value {
+      auto env = Environment::current();
+
+      auto nodeId = (jint)arguments[0];
+      auto fn = arguments[1].asObject(runtime).asFunction(runtime);
+
+      auto callback = nullptr; // TODO:  create java callback
+
+      env->CallVoidMethod(moduleObject, method, nodeId, callback);
+
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(runtime, name, 2, callback);
+  }
 
   if (methodName == "createNode") {
     auto &method = _createNode;
