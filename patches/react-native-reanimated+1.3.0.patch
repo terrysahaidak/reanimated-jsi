@@ -1,0 +1,40 @@
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
+index a0e058e..827815f 100644
+--- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
+@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
+ import com.facebook.react.bridge.ReactMethod;
+ import com.facebook.react.bridge.ReadableArray;
+ import com.facebook.react.bridge.ReadableMap;
++import com.facebook.react.bridge.ReadableMapKeySetIterator;
+ import com.facebook.react.module.annotations.ReactModule;
+ import com.facebook.react.uimanager.NativeViewHierarchyManager;
+ import com.facebook.react.uimanager.UIBlock;
+@@ -30,6 +31,8 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
+     void execute(NodesManager nodesManager);
+   }
+ 
++  public native void installJSI(long javaScriptContextHolder);
++
+   private ArrayList<UIThreadOperation> mOperations = new ArrayList<>();
+ 
+   private @Nullable NodesManager mNodesManager;
+@@ -113,6 +116,18 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
+     });
+   }
+ 
++  @ReactMethod
++  public void createNodeJSI(final ReadableMap config) {
++    final int tag = config.getInt("______NODE_TAG");
++
++    mOperations.add(new UIThreadOperation() {
++      @Override
++      public void execute(NodesManager nodesManager) {
++        nodesManager.createNode(tag, config);
++      }
++    });
++  }
++
+   @ReactMethod
+   public void dropNode(final int tag) {
+     mOperations.add(new UIThreadOperation() {

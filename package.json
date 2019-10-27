@@ -6,7 +6,11 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "clean:android": "cd android && ./gradlew clean && cd ../",
+    "run:android": "npm run jsi:update && npx react-native run-android",
+    "jsi:update": "cp -fr ./jsi/android/* ./node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/jscexecutor/",
+    "postinstall": "npm run jsi:update && patch-package"
   },
   "dependencies": {
     "react": "16.8.1",
@@ -21,6 +25,7 @@
     "babel-jest": "^24.1.0",
     "jest": "^24.1.0",
     "metro-react-native-babel-preset": "^0.51.1",
+    "patch-package": "^6.2.0",
     "react-test-renderer": "16.8.1"
   },
   "jest": {

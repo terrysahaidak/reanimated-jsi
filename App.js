@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {StyleSheet, View, Dimensions, FlatList, Button} from 'react-native';
 import Animated from 'react-native-reanimated';
-import {useTween} from 'react-native-retween';
+import {useTween} from 'react-native-retween/src/index';
 
 const {width: windowWidth} = Dimensions.get('window');
 
@@ -73,7 +73,7 @@ function TweenExample() {
   );
 }
 
-const ANIMATION_COUNT = 10;
+const ANIMATION_COUNT = 100;
 
 export default function BasicScreen() {
   const [show, setShow] = React.useState(false);
@@ -88,22 +88,23 @@ export default function BasicScreen() {
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-        <Button
-          onPress={() => setShow(true)}
-          title={global.NativeReanimated.runTest(1, {})}
-        />
+        <Button onPress={() => setShow(true)} title="Show" />
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={range}
-      initialNumToRender={ANIMATION_COUNT}
-      // maxToRenderPerBatch={ANIMATION_COUNT}
-      contentContainerStyle={s.scroll}
-      renderItem={() => <TweenExample />}
-      keyExtractor={(_, i) => i.toString()}
-    />
+    <>
+      <Button onPress={() => setShow(false)} title="Hide" />
+
+      <FlatList
+        data={range}
+        initialNumToRender={ANIMATION_COUNT}
+        // maxToRenderPerBatch={ANIMATION_COUNT}
+        contentContainerStyle={s.scroll}
+        renderItem={() => <TweenExample />}
+        keyExtractor={(_, i) => i.toString()}
+      />
+    </>
   );
 }
