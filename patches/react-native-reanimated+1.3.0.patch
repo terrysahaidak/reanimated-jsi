@@ -1,16 +1,64 @@
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/Callback.java b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/Callback.java
+new file mode 100644
+index 0000000..4b4c67d
+--- /dev/null
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/Callback.java
+@@ -0,0 +1,30 @@
++package com.swmansion.reanimated;
++
++public class Callback {
++  private long mCallbackPtr;
++  private long mRuntimePtr;
++
++  public Callback(final long runtimePtr, final long callbackPtr) {
++    mCallbackPtr = callbackPtr;
++    mRuntimePtr = runtimePtr;
++  }
++
++  public void invoke(Object value) {
++    Class valueClass = value.getClass();
++    String arg = "";
++
++    if (valueClass == Integer.class) {
++      arg = String.valueOf(((Integer) value).doubleValue());
++    } else if (valueClass == Double.class) {
++      arg = String.valueOf(((Double) value).doubleValue());
++    } else if (valueClass == Float.class) {
++      arg = String.valueOf(((Float) value).doubleValue());
++    } else if (valueClass == String.class) {
++      arg = value.toString();
++    }
++
++    nativeInvoke(mRuntimePtr, mCallbackPtr, arg);
++  }
++
++  private native void nativeInvoke(long runtimePtr, long callbackPtr, String value);
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.java b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.java
+index 9974c64..b0a735e 100644
+--- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.java
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.java
+@@ -3,7 +3,6 @@ package com.swmansion.reanimated;
+ import android.util.SparseArray;
+ 
+ import com.facebook.react.bridge.Arguments;
+-import com.facebook.react.bridge.Callback;
+ import com.facebook.react.bridge.GuardedRunnable;
+ import com.facebook.react.bridge.JSApplicationIllegalArgumentException;
+ import com.facebook.react.bridge.ReactContext;
 diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
-index a0e058e..827815f 100644
+index a0e058e..e1ffe4d 100644
 --- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
 +++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
-@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
- import com.facebook.react.bridge.ReactMethod;
- import com.facebook.react.bridge.ReadableArray;
- import com.facebook.react.bridge.ReadableMap;
-+import com.facebook.react.bridge.ReadableMapKeySetIterator;
- import com.facebook.react.module.annotations.ReactModule;
- import com.facebook.react.uimanager.NativeViewHierarchyManager;
- import com.facebook.react.uimanager.UIBlock;
-@@ -30,6 +31,8 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
+@@ -1,6 +1,5 @@
+ package com.swmansion.reanimated;
+ 
+-import com.facebook.react.bridge.Callback;
+ import com.facebook.react.bridge.LifecycleEventListener;
+ import com.facebook.react.bridge.ReactApplicationContext;
+ import com.facebook.react.bridge.ReactContextBaseJavaModule;
+@@ -30,6 +29,8 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
      void execute(NodesManager nodesManager);
    }
  
@@ -19,7 +67,7 @@ index a0e058e..827815f 100644
    private ArrayList<UIThreadOperation> mOperations = new ArrayList<>();
  
    private @Nullable NodesManager mNodesManager;
-@@ -113,6 +116,18 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
+@@ -113,6 +114,18 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
      });
    }
  
@@ -38,3 +86,73 @@ index a0e058e..827815f 100644
    @ReactMethod
    public void dropNode(final int tag) {
      mOperations.add(new UIThreadOperation() {
+diff --git a/node_modules/react-native-reanimated/src/core/AnimatedNode.js b/node_modules/react-native-reanimated/src/core/AnimatedNode.js
+index 9239a6b..a29dafe 100644
+--- a/node_modules/react-native-reanimated/src/core/AnimatedNode.js
++++ b/node_modules/react-native-reanimated/src/core/AnimatedNode.js
+@@ -1,5 +1,7 @@
+ import ReanimatedModule from '../ReanimatedModule';
+ 
++const ReanimatedModuleNative = global.NativeReanimated;
++
+ const UPDATED_NODES = [];
+ 
+ let loopID = 1;
+@@ -110,15 +112,23 @@ export default class AnimatedNode {
+   }
+ 
+   __nativeInitialize() {
++    console.log(typeof NativeReanimated)
++
+     if (!this.__initialized) {
+-      ReanimatedModule.createNode(this.__nodeID, { ...this.__nodeConfig });
++      ReanimatedModuleNative.createNode({
++        ______NODE_TAG: this.__nodeID,
++        ...this.__nodeConfig,
++      });
++
++      // ReanimatedModuleNative.createNode(this.__nodeID, {...this.__nodeConfig});
++
+       this.__initialized = true;
+     }
+   }
+ 
+   __nativeTearDown() {
+     if (this.__initialized) {
+-      ReanimatedModule.dropNode(this.__nodeID);
++      ReanimatedModuleNative.dropNode(this.__nodeID);
+       this.__initialized = false;
+     }
+   }
+@@ -146,7 +156,7 @@ export default class AnimatedNode {
+     this.__children.push(child);
+     child.__nativeInitialize();
+ 
+-    ReanimatedModule.connectNodes(this.__nodeID, child.__nodeID);
++    ReanimatedModuleNative.connectNodes(this.__nodeID, child.__nodeID);
+   }
+ 
+   __removeChild(child) {
+@@ -155,7 +165,8 @@ export default class AnimatedNode {
+       console.warn("Trying to remove a child that doesn't exist");
+       return;
+     }
+-    ReanimatedModule.disconnectNodes(this.__nodeID, child.__nodeID);
++
++    ReanimatedModuleNative.disconnectNodes(this.__nodeID, child.__nodeID);
+ 
+     this.__children.splice(index, 1);
+     if (this.__children.length === 0) {
+@@ -164,10 +175,10 @@ export default class AnimatedNode {
+   }
+ 
+   _connectAnimatedView(nativeViewTag) {
+-    ReanimatedModule.connectNodeToView(this.__nodeID, nativeViewTag);
++    ReanimatedModuleNative.connectNodeToView(this.__nodeID, nativeViewTag);
+   }
+ 
+   _disconnectAnimatedView(nativeViewTag) {
+-    ReanimatedModule.disconnectNodeFromView(this.__nodeID, nativeViewTag);
++    ReanimatedModuleNative.disconnectNodeFromView(this.__nodeID, nativeViewTag);
+   }
+ }

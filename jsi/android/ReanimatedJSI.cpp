@@ -27,7 +27,7 @@ void JNICALL Java_com_swmansion_reanimated_ReanimatedModule_installJSI(
   auto disconnectNodeFromView = env->GetMethodID(clazz, "disconnectNodeFromView", "(II)V");
   auto attachEvent = env->GetMethodID(clazz, "attachEvent", "(ILjava/lang/String;I)V");
   auto detachEvent = env->GetMethodID(clazz, "detachEvent", "(ILjava/lang/String;I)V");
-  auto getValue = env->GetMethodID(clazz, "getValue", "(ILcom/facebook/react/bridge/Callback;)V");
+  auto getValue = env->GetMethodID(clazz, "getValue", "(ILcom/swmansion/reanimated/Callback;)V");
 
   auto module = std::make_shared<ReanimatedJSI>(
     // clazz,
@@ -49,6 +49,22 @@ void JNICALL Java_com_swmansion_reanimated_ReanimatedModule_installJSI(
 using namespace facebook;
 using namespace facebook::jni;
 using namespace facebook::react;
+
+void JNICALL Java_com_swmansion_reanimated_Callback_nativeInvoke(
+  JNIEnv *env,
+  jobject thiz,
+  jlong runtimePtr,
+  jlong callbackPtr,
+  jstring value
+) {
+  auto &runtime = *(jsi::Runtime *)runtimePtr;
+  auto &fn = *(jsi::Function *)callbackPtr;
+
+  const char *str = env->GetStringUTFChars(value, nullptr);
+
+  fn.call(runtime, str, 1);
+}
+
 
 inline local_ref<ReadableMap::javaobject> castReadableMap(
     local_ref<ReadableNativeMap::javaobject> nativeMap
@@ -116,17 +132,23 @@ jsi::Value ReanimatedJSI::get(
     ) -> jsi::Value {
       auto env = Environment::current();
 
-      auto nodeId = (jint)arguments[0];
+      auto nodeId = (jint)arguments[0].asNumber();
       auto fn = arguments[1].asObject(runtime).asFunction(runtime);
 
-      auto callback = nullptr; // TODO:  create java callback
+      jlong fnPtr = (jlong) &fn;
+      jlong runtimePtr = (jlong) &runtime;
 
+      jclass callbackClass = env->FindClass("com/swmansion/reanimated/Callback");
+      jmethodID callbackConstructor = env->GetMethodID(callbackClass, "<init>", "(JJ)V");
+      jobject callback = env->NewObject(callbackClass, callbackConstructor, runtimePtr, fnPtr);
+
+      // this line throws "JNI DETECTED ERROR IN APPLICATION: use of invalid jobject 0x7ff25f9e14"
       env->CallVoidMethod(moduleObject, method, nodeId, callback);
 
       return jsi::Value::undefined();
     };
 
-    return jsi::Function::createFromHostFunction(runtime, name, 2, callback);
+    return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
   }
 
   if (methodName == "createNode") {

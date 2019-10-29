@@ -8,7 +8,7 @@
     "start": "react-native start",
     "test": "jest",
     "clean:android": "cd android && ./gradlew clean && cd ../",
-    "run:android": "npm run jsi:update && npx react-native run-android",
+    "android": "npm run jsi:update && npx react-native run-android",
     "jsi:update": "cp -fr ./jsi/android/* ./node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/jscexecutor/",
     "postinstall": "npm run jsi:update && patch-package"
   },

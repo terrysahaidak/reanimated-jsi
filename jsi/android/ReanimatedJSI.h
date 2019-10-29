@@ -28,6 +28,7 @@ private:
   jmethodID _disconnectNodeFromView;
   jmethodID _attachEvent;
   jmethodID _detachEvent;
+  jmethodID _getValue;
 
 public:
   ReanimatedJSI(
@@ -40,7 +41,8 @@ public:
     jmethodID connectNodeToView,
     jmethodID disconnectNodeFromView,
     jmethodID attachEvent,
-    jmethodID detachEvent
+    jmethodID detachEvent,
+    jmethodID getValue
   );
 
   static void install(
