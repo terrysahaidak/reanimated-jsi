@@ -218,6 +218,32 @@ jsi::Value ReanimatedJSI::get(
     return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
   }
 
+  if (methodName == "createNodeCallFunc") {
+    auto &moduleObject = _moduleObject;
+
+    auto callback = [moduleObject](
+      jsi::Runtime &runtime,
+      const jsi::Value &thisValue,
+      const jsi::Value *arguments,
+      size_t count
+    ) -> jsi::Value {
+      auto env = Environment::current();
+  
+      auto nodeId = (jint)arguments[0].asNumber();
+      auto what = (jint)arguments[1].asNumber();
+
+      auto args = createJIntArray(env, runtime, &arguments[2]);
+      auto params = createJIntArray(env, runtime, &arguments[3]);
+
+      auto method = env->GetMethodID(clazz, "createNodeCallFunc", "(II[I[I)V");
+      env->CallVoidMethod(moduleObject, method, nodeId, what, args, params);
+
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
+  }
+
   if (methodName == "dropNode") {
     auto &method = _dropNode;
     auto &moduleObject = _moduleObject;
