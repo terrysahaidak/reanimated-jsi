@@ -78,6 +78,25 @@ inline local_ref<ReadableArray::javaobject> castReadableArray(
   return make_local(reinterpret_cast<ReadableArray::javaobject>(nativeArray.get()));
 }
 
+jintArray createJIntArray(JNIEnv *env, jsi::Runtime &runtime, jsi::Value arg) {
+    auto arr = arg.getObject(runtime).asArray(runtime).getArray(runtime);
+    // __android_log_print(ANDROID_LOG_DEBUG, APPNAME, "Number is %f", number);
+
+    auto arrayLength = arr.length(runtime);
+
+    int nativeArr[arrayLength];
+    for (unsigned int i = 0; i < arrayLength; i++) {
+        auto value = (jint)arr.getValueAtIndex(runtime, i).asNumber();
+        nativeArr[i] = value;
+    }
+
+    auto javaArray = env->NewIntArray(arrayLength);
+
+    env->SetIntArrayRegion(javaArray, 0, arrayLength, nativeArr);
+
+    return javaArray;
+}
+
 ReanimatedJSI::ReanimatedJSI(
   // jclass moduleClass,
   jobject moduleObject,
@@ -168,6 +187,30 @@ jsi::Value ReanimatedJSI::get(
         castReadableMap(ReadableNativeMap::newObjectCxxArgs(dynamicMap));
 
       env->CallVoidMethod(moduleObject, method, readableMap.get());
+
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
+  }
+
+  if (methodName == "createNodeOperator") {
+    auto &moduleObject = _moduleObject;
+
+    auto callback = [moduleObject](
+      jsi::Runtime &runtime,
+      const jsi::Value &thisValue,
+      const jsi::Value *arguments,
+      size_t count
+    ) -> jsi::Value {
+      auto env = Environment::current();
+  
+      auto nodeId = (jint)arguments[0].asNumber();
+      auto op = make_jstring(arguments[1].asString(runtime).utf8(runtime));
+      auto arr = createJIntArray(env, runtime, &arguments[2]);
+
+      auto method = env->GetMethodID(clazz, "createNodeOperator", "(ILjava/lang/String;[I)V");
+      env->CallVoidMethod(moduleObject, method, nodeId, op, arr);
 
       return jsi::Value::undefined();
     };
