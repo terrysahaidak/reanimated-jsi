@@ -312,6 +312,29 @@ jsi::Value ReanimatedJSI::get(
     return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
   }
 
+    if (methodName == "createNodeAlways") {
+    auto &moduleObject = _moduleObject;
+
+    auto callback = [moduleObject](
+      jsi::Runtime &runtime,
+      const jsi::Value &thisValue,
+      const jsi::Value *arguments,
+      size_t count
+    ) -> jsi::Value {
+      auto env = Environment::current();
+  
+      auto nodeId = (jint)arguments[0].asNumber();
+      auto what = (jint)arguments[1].asNumber();
+
+      auto method = env->GetMethodID(clazz, "createNodeAlways", "(II)V");
+      env->CallVoidMethod(moduleObject, method, nodeId, what);
+
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
+  }
+
   if (methodName == "dropNode") {
     auto &method = _dropNode;
     auto &moduleObject = _moduleObject;
