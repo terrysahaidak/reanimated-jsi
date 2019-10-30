@@ -289,6 +289,29 @@ jsi::Value ReanimatedJSI::get(
     return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
   }
 
+  if (methodName == "createNodeConcat") {
+    auto &moduleObject = _moduleObject;
+
+    auto callback = [moduleObject](
+      jsi::Runtime &runtime,
+      const jsi::Value &thisValue,
+      const jsi::Value *arguments,
+      size_t count
+    ) -> jsi::Value {
+      auto env = Environment::current();
+  
+      auto nodeId = (jint)arguments[0].asNumber();
+      auto input = createJIntArray(env, runtime, &arguments[1]);
+
+      auto method = env->GetMethodID(clazz, "createNodeConcat", "(I[I)V");
+      env->CallVoidMethod(moduleObject, method, nodeId, input);
+
+      return jsi::Value::undefined();
+    };
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, callback);
+  }
+
   if (methodName == "dropNode") {
     auto &method = _dropNode;
     auto &moduleObject = _moduleObject;
